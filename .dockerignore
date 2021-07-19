@@ -1,0 +1,6 @@
+target/debug
+target/rls
+target/tarpaulin
+target/release
+test-data
+

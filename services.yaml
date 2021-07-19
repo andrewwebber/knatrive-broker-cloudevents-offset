@@ -1,0 +1,105 @@
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: foo
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+    spec:
+      containers:
+        - image: "andrewvwebber/cloudevents:ed9a401d"
+          command: ["/usr/local/bin/foo"]
+          imagePullPolicy: Always
+          env:
+            - name: NAMESPACE
+              value: "default"
+            - name: POST_TO_BROKER
+              value: "false"
+            - name: K_BROKER
+              value: "http://broker-ingress.knative-eventing/default/default"
+            - name: K_SOURCE
+              value: "http://foo"
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: bar
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+    spec:
+      containers:
+        - image: "andrewvwebber/cloudevents:ed9a401d"
+          command: ["/usr/local/bin/bar"]
+          imagePullPolicy: Always
+          env:
+            - name: NAMESPACE
+              value: "default"
+            - name: EVENT_TY
+              value: "bar.example"
+            - name: POST_TO_BROKER
+              value: "false"
+            - name: K_BROKER
+              value: "http://broker-ingress.knative-eventing/default/default"
+            - name: K_SOURCE
+              value: "http://bar"
+---
+apiVersion: serving.knative.dev/v1
+kind: Service
+metadata:
+  name: bar2
+spec:
+  template:
+    metadata:
+      annotations:
+        autoscaling.knative.dev/minScale: "1"
+    spec:
+      containers:
+        - image: "andrewvwebber/cloudevents:ed9a401d"
+          command: ["/usr/local/bin/bar"]
+          imagePullPolicy: Always
+          env:
+            - name: NAMESPACE
+              value: "default"
+            - name: EVENT_TY
+              value: "bar2.example"
+            - name: POST_TO_BROKER
+              value: "false"
+            - name: K_BROKER
+              value: "http://broker-ingress.knative-eventing/default/default"
+            - name: K_SOURCE
+              value: "http://bar2"
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: bar-trigger
+spec:
+  broker: default
+  filter:
+    attributes:
+      type: events.foo
+  subscriber:
+    ref:
+     apiVersion: v1
+     kind: Service
+     name: bar
+---
+apiVersion: eventing.knative.dev/v1
+kind: Trigger
+metadata:
+  name: bar2-trigger
+spec:
+  broker: default
+  filter:
+    attributes:
+      type: bar.example
+  subscriber:
+    ref:
+     apiVersion: v1
+     kind: Service
+     name: bar2
